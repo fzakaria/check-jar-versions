@@ -14,14 +14,33 @@ import java.util.zip.ZipFile;
 
 /**
  * Checks the class file version of all class files within a JAR file.
- *
  * To execute this program, provide the path to the JAR file as an argument.
+ * https://gist.githubusercontent.com/jpstotz/84091fd79d1e5682f64aa5daac868363/raw/12175283f64149b3360b5bcec9cddb3b85a012ae/CheckJarClassVersion.java
  */
 public class CheckJarClassVersion {
 
+    private static void printUsage() {
+        System.out.println("""
+            Usage: check-jar-versions [-h] [jar]
+            Checks the class file version of all class files within a JAR file.
+            
+            positional arguments:
+                jar        The jar file to analyze
+
+            options:
+                -h, --help      show this help message and exit
+            """);     
+    }
+
     public static void main(String[] args) {
+        
+        if (args.length == 1 && (args[0].equals("-h") || args[0].equals("--help"))) {
+            printUsage();
+            System.exit(0);
+        }
+
         if (args.length != 1) {
-            System.err.println("Usage: java CheckJarClassVersion <path-to-jar-file>");
+            printUsage();
             System.exit(1);
         }
 
@@ -36,7 +55,9 @@ public class CheckJarClassVersion {
             Enumeration<? extends ZipEntry> entries = jarFile.entries();
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
-                if (!entry.getName().endsWith(".class")) {
+                final String filename = entry.getName();
+
+                if (!filename.endsWith(".class")) {
                     continue;
                 }
 
@@ -47,26 +68,22 @@ public class CheckJarClassVersion {
                         continue;
                     }
 
-                    int classFileVersion = in.readUnsignedShort();
+					int classFileVersion = in.readInt();
                     classVersionMap
                         .computeIfAbsent(classFileVersion, k -> new ArrayList<>())
-                        .add(entry.getName());
+                        .add(filename);
                 } catch (IOException e) {
-                    System.err.println("Error reading class file " + entry.getName() + ": " + e.getMessage());
+                    System.err.println("Error reading class file " + filename + ": " + e.getMessage());
                 }
             }
 
-            if (classVersionMap.isEmpty()) {
-                System.out.println("No class files found in the JAR: " + jarPath);
-            } else {
-                classVersionMap.forEach((version, files) -> {
+            classVersionMap.forEach((version, files) -> {
                     int javaVersion = version - 44;
                     System.out.printf("Class File Format Version: %d (Java %d) - Number of files: %d%n",
                                       version, javaVersion, files.size());
                     // Uncomment the next line to list all files in each category
                     // files.forEach(file -> System.out.println("\t" + file));
-                });
-            }
+            });
         } catch (IOException e) {
             System.err.println("Error processing the JAR file: " + e.getMessage());
         }

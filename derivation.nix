@@ -20,12 +20,12 @@ in
     buildPhase = ''
       javac ./src/main/java/io/fzakaria/CheckJarClassVersion.java
       native-image -H:+UnlockExperimentalVMOptions -H:-CheckToolchain -H:+ReportExceptionStackTraces -march=compatibility \
-                   io.fzakaria.CheckJarClassVersion check-jar-class-version -cp ./src/main/java
+                   io.fzakaria.CheckJarClassVersion check-jar-versions -cp ./src/main/java
     '';
 
     # Install the binary
     installPhase = ''
       mkdir -p $out/bin
-      mv check-jar-class-version $out/bin/
+      mv check-jar-versions $out/bin/
     '';
   }
